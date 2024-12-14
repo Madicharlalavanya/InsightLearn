@@ -5,9 +5,7 @@ import axios from 'axios';
 const AnnouncementManagement = () => {
   const [creatingAnnouncement, setCreatingAnnouncement] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
-  const [newAnnouncement, setNewAnnouncement] = useState({ title: "", content: "", file: null });
-
- 
+  const [newAnnouncement, setNewAnnouncement] = useState({ title: "", content: "" });
 
   // Fetch announcements from the backend
   useEffect(() => {
@@ -22,33 +20,23 @@ const AnnouncementManagement = () => {
     };
     fetchAnnouncements();
   }, []);
-  
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewAnnouncement({ ...newAnnouncement, [name]: value });
   };
 
-  const handleFileChange = (e) => {
-    setNewAnnouncement({ ...newAnnouncement, file: e.target.files[0] });
-  };
-
   const handlePost = async () => {
     if (newAnnouncement.title && newAnnouncement.content) {
       try {
-        const formData = new FormData();
-        formData.append('title', newAnnouncement.title);
-        formData.append('content', newAnnouncement.content);
-        if (newAnnouncement.file) {
-          formData.append('file', newAnnouncement.file);
-        }
-  
-        const response = await axios.post('http://localhost:5000/api/announcements', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+        const response = await axios.post('http://localhost:5000/api/announcements', {
+          title: newAnnouncement.title,
+          content: newAnnouncement.content,
         });
-  
+
         if (response.status === 201) {
           setAnnouncements([response.data, ...announcements]);
-          setNewAnnouncement({ title: "", content: "", file: null });
+          setNewAnnouncement({ title: "", content: "" });
           setCreatingAnnouncement(false);
         } else {
           alert("Failed to post announcement. Please try again.");
@@ -61,10 +49,9 @@ const AnnouncementManagement = () => {
       alert("Please fill in all the fields!");
     }
   };
-  
 
   const handleCancel = () => {
-    setNewAnnouncement({ title: "", content: "", file: null });
+    setNewAnnouncement({ title: "", content: "" });
     setCreatingAnnouncement(false);
   };
 
@@ -91,11 +78,6 @@ const AnnouncementManagement = () => {
             value={newAnnouncement.content}
             onChange={handleInputChange}
             style={{ width: '300px', height: '100px', padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
-          />
-          <input
-            type="file"
-            onChange={handleFileChange}
-            style={{ border: 'none', padding: '5px' }}
           />
           <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={handlePost} style={{ padding: '10px 20px', backgroundColor: '#4caf50', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Post Announcement</button>
@@ -143,8 +125,8 @@ const AnnouncementManagement = () => {
                   boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)'
                 }}>
                   <h4 style={{ margin: '0 0 5px' }}>{announcement.title}</h4>
-                  <p style={{ margin: '0 0 5px', color: '#555' }}>{announcement.content}</p>
-                  <small style={{ color: '#999' }}>Posted on: {announcement.date}</small>
+                  <p style={{ margin: '0 0 10px', color: '#555' }}>{announcement.content}</p>
+                  <small style={{ color: '#999' }}>Posted on: {new Date(announcement.date).toLocaleString()}</small>
                 </div>
               ))
             ) : (

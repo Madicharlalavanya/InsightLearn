@@ -6,13 +6,14 @@ const PollManagement = () => {
   const [polls, setPolls] = useState([]);  // Store the list of polls
   const [creatingPoll, setCreatingPoll] = useState(false);  // Track if the user wants to create a poll
   const [newPoll, setNewPoll] = useState({ question: "", options: [] });  // Store data for new poll
+  const [showPreviousPolls, setShowPreviousPolls] = useState(true);  // Show/hide previous polls
 
-  // Fetch polls from the backend (assuming there's an endpoint to fetch polls)
+  // Fetch polls from the backend
   useEffect(() => {
     const fetchPolls = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/polls');
-        setPolls(response.data);  // Update state with poll data
+        setPolls(response.data);
       } catch (error) {
         console.error("Error fetching polls:", error.message);
       }
@@ -26,7 +27,7 @@ const PollManagement = () => {
     setNewPoll({ ...newPoll, [name]: value });
   };
 
-  // Handle adding options for the poll
+  // Handle adding poll options
   const handleOptionChange = (e, index) => {
     const { value } = e.target;
     const updatedOptions = [...newPoll.options];
@@ -43,15 +44,24 @@ const PollManagement = () => {
     if (newPoll.question && newPoll.options.length > 0) {
       try {
         const response = await axios.post('http://localhost:5000/api/polls', newPoll);
-        setPolls([response.data, ...polls]);  // Add new poll to the list
-        setCreatingPoll(false);  // Hide poll creation form
-        setNewPoll({ question: "", options: [] });  // Clear form fields
+        if (response.status === 201) {
+          setPolls([response.data.poll, ...polls]);
+          setCreatingPoll(false);
+          setShowPreviousPolls(true);  // Show previous polls again
+          setNewPoll({ question: "", options: [] });
+        }
       } catch (error) {
         console.error("Error posting poll:", error.message);
+        alert("There was an issue posting the poll.");
       }
     } else {
       alert("Please provide a question and options!");
     }
+  };
+  
+  // Handle navigating back to previous polls
+  const handleGoBack = () => {
+    setShowPreviousPolls(true);  // Show previous polls again
   };
 
   return (
@@ -63,35 +73,51 @@ const PollManagement = () => {
       padding: '20px',
       flexWrap: 'wrap'
     }}>
+      {/* Show or Hide Previous Poll Results */}
+      {showPreviousPolls && !creatingPoll ? (
+        <div style={{ width: '100%', maxWidth: '600px' }}>
+          <h3>Previous Polls</h3>
+          {polls.length > 0 ? (
+            polls.map((poll, index) => (
+              <div key={index} style={{
+                backgroundColor: '#fff',
+                border: '1px solid #ddd',
+                borderRadius: '5px',
+                padding: '15px',
+                marginBottom: '10px',
+                boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)'
+              }}>
+                <h4>{poll.question}</h4>
+                <ul>
+                  {poll.options.map((option, idx) => (
+                    <li key={idx}>{option}</li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          ) : (
+            <p>No polls yet.</p>
+          )}
+        </div>
+      ) : null}
 
-      {/* Display Previous Poll Results */}
-      <div style={{ width: '100%', maxWidth: '600px' }}>
-        <h3>Previous Polls</h3>
-        {polls.length > 0 ? (
-          polls.map((poll, index) => (
-            <div key={index} style={{
-              backgroundColor: '#fff',
-              border: '1px solid #ddd',
-              borderRadius: '5px',
-              padding: '15px',
-              marginBottom: '10px',
-              boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)'
-            }}>
-              <h4>{poll.question}</h4>
-              <ul>
-                {poll.options.map((option, idx) => (
-                  <li key={idx}>{option}</li>
-                ))}
-              </ul>
-            </div>
-          ))
-        ) : (
-          <p>No polls yet.</p>
-        )}
-      </div>
+      {/* Poll Successfully Posted */}
+      {!showPreviousPolls && !creatingPoll && (
+        <div>
+          <h3>Poll Successfully Posted!</h3>
+          <button onClick={handleGoBack} style={{
+            padding: '10px 20px',
+            backgroundColor: '#2196f3',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}>Back to Recent Polls</button>
+        </div>
+      )}
 
       {/* Create Poll Button */}
-      {!creatingPoll ? (
+      {!creatingPoll && showPreviousPolls && (
         <div style={{
           width: '250px',
           height: '150px',
@@ -119,7 +145,10 @@ const PollManagement = () => {
             cursor: 'pointer'
           }}>Create Poll</button>
         </div>
-      ) : (
+      )}
+
+      {/* Poll Creation Form */}
+      {creatingPoll && (
         <div style={{
           width: '300px',
           display: 'flex',
